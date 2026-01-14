@@ -1,33 +1,41 @@
 #!/bin/bash
 # Ralph Wiggum - Long-running AI agent loop using opencode + bd
-# Usage: ./ralph.sh [-m model] [-n max_iterations]
+# Usage: ./ralph.sh [-m model] [-n max_iterations] [-b browser_mode]
 #
 # Examples:
 #   ./ralph.sh                           # Default: 10 iterations, default model
 #   ./ralph.sh -n 5                       # 5 iterations
 #   ./ralph.sh -m anthropic/claude-sonnet # Use specific model
-#   ./ralph.sh -m openai/gpt-4o -n 20     # Specific model, 20 iterations
+#   ./ralph.sh -b playwright              # Use Playwright MCP for browser testing
+#   ./ralph.sh -b dev-browser             # Use dev-browser for browser testing
 
 set -e
 
 # Parse arguments
 MAX_ITERATIONS=100
 MODEL="opencode/gpt-5.2"
+BROWSER_MODE="playwright"  # Default to playwright, options: playwright, dev-browser, none
 
-while getopts "m:n:h" opt; do
+while getopts "m:n:b:h" opt; do
 	case $opt in
 	m) MODEL="$OPTARG" ;;
 	n) MAX_ITERATIONS="$OPTARG" ;;
+	b) BROWSER_MODE="$OPTARG" ;;
 	h)
-		echo "Usage: ./ralph.sh [-m model] [-n max_iterations]"
+		echo "Usage: ./ralph.sh [-m model] [-n max_iterations] [-b browser_mode]"
 		echo ""
 		echo "Options:"
 		echo "  -m MODEL    Model to use (default: opencode/gpt-5.2)"
-		echo "  -n NUM      Max iterations (default: 10)"
+		echo "  -n NUM      Max iterations (default: 100)"
+		echo "  -b MODE     Browser testing mode (default: playwright)"
+		echo "              playwright   - Use Playwright MCP (subagent)"
+		echo "              dev-browser  - Use dev-browser skill"
+		echo "              none         - No browser testing"
 		echo "  -h          Show this help"
 		echo ""
 		echo "Examples:"
 		echo "  ./ralph.sh -m anthropic/claude-sonnet -n 5"
+		echo "  ./ralph.sh -b dev-browser -n 10"
 		exit 0
 		;;
 	\?)
@@ -97,6 +105,7 @@ bd ready --limit 5 2>/dev/null || echo "No bd database found - run 'bd init' fir
 echo ""
 echo "Starting Ralph - Max iterations: $MAX_ITERATIONS"
 echo "Using model: $MODEL"
+echo "Browser mode: $BROWSER_MODE"
 
 # Read prompt file content
 PROMPT_FILE="$SCRIPT_DIR/prompt.md"
@@ -105,6 +114,50 @@ if [ ! -f "$PROMPT_FILE" ]; then
 	exit 1
 fi
 PROMPT_CONTENT=$(cat "$PROMPT_FILE")
+
+# Inject browser testing instructions based on mode
+case $BROWSER_MODE in
+	playwright)
+		BROWSER_INSTRUCTIONS="
+
+## Browser Testing Mode: Playwright MCP
+
+For UI verification, delegate to a subagent using Playwright MCP:
+\`\`\`
+Task tool with subagent_type: \"general\"
+\"Use Playwright MCP to verify [UI change] at [URL]...\"
+\`\`\`
+"
+		;;
+	dev-browser)
+		BROWSER_INSTRUCTIONS="
+
+## Browser Testing Mode: dev-browser
+
+For UI verification, load the dev-browser skill and use it directly:
+1. Start the server: \`./skills/dev-browser/server.sh &\`
+2. Write small tsx scripts to navigate, interact, and screenshot
+3. Use \`getAISnapshot()\` to discover elements
+4. Use \`selectSnapshotRef()\` to interact with elements
+"
+		;;
+	none)
+		BROWSER_INSTRUCTIONS="
+
+## Browser Testing Mode: None
+
+Browser testing is disabled. Skip UI verification steps.
+"
+		;;
+	*)
+		echo "Invalid browser mode: $BROWSER_MODE (use: playwright, dev-browser, none)"
+		exit 1
+		;;
+esac
+
+# Append browser instructions to prompt
+PROMPT_CONTENT="$PROMPT_CONTENT
+$BROWSER_INSTRUCTIONS"
 
 for i in $(seq 1 $MAX_ITERATIONS); do
 	echo ""
