@@ -70,7 +70,7 @@ bd create --title "Critical bug" --type bug --priority 0
 
 Options:
 - `-n NUM` - Max iterations (default: 100)
-- `-m MODEL` - Model to use (default: opencode/gpt-5.2)
+- `-m MODEL` - Model to use (default: opencode/gpt-5.2-codex)
 - `-b MODE` - Browser testing mode (default: playwright)
   - `playwright` - Use Playwright MCP via subagent
   - `dev-browser` - Use dev-browser skill directly
@@ -82,7 +82,7 @@ Examples:
 ./ralph.sh                              # Default settings
 ./ralph.sh -n 5                          # Max 5 iterations
 ./ralph.sh -m anthropic/claude-sonnet-4  # Use Claude
-./ralph.sh -m opencode/gpt-5.2 -n 20     # GPT-5.2, 20 iterations
+./ralph.sh -m opencode/gpt-5.2-codex -n 20  # GPT-5.2-codex, 20 iterations
 ./ralph.sh -b dev-browser               # Use dev-browser for UI testing
 ./ralph.sh -b none                      # Skip browser testing
 ```

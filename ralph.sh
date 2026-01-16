@@ -13,7 +13,7 @@ set -e
 
 # Parse arguments
 MAX_ITERATIONS=100
-MODEL="opencode/gpt-5.2"
+MODEL="opencode/gpt-5.2-codex"
 BROWSER_MODE="playwright"  # Default to playwright, options: playwright, dev-browser, none
 
 while getopts "m:n:b:h" opt; do
@@ -25,7 +25,7 @@ while getopts "m:n:b:h" opt; do
 		echo "Usage: ./ralph.sh [-m model] [-n max_iterations] [-b browser_mode]"
 		echo ""
 		echo "Options:"
-		echo "  -m MODEL    Model to use (default: opencode/gpt-5.2)"
+		echo "  -m MODEL    Model to use (default: opencode/gpt-5.2-codex)"
 		echo "  -n NUM      Max iterations (default: 100)"
 		echo "  -b MODE     Browser testing mode (default: playwright)"
 		echo "              playwright   - Use Playwright MCP (subagent)"
